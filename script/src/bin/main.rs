@@ -12,7 +12,7 @@
 
 use alloy_sol_types::SolType;
 use clap::Parser;
-use fibonacci_lib::PublicValuesStruct;
+use fibonacci_lib::Passport;
 use sp1_sdk::{ProverClient, SP1Stdin};
 
 /// The ELF (executable and linkable format) file for the Succinct RISC-V zkVM.
@@ -28,8 +28,11 @@ struct Args {
     #[clap(long)]
     prove: bool,
 
-    #[clap(long, default_value = "20")]
-    n: u32,
+    #[clap(long)]
+    number: String,
+
+    #[clap(long)]
+    country: String,
 }
 
 fn main() {
@@ -49,25 +52,28 @@ fn main() {
 
     // Setup the inputs.
     let mut stdin = SP1Stdin::new();
-    stdin.write(&args.n);
+    stdin.write(&args.number);
+    stdin.write(&args.country);
 
-    println!("n: {}", args.n);
+    println!("passport number: {}", args.number);
+    println!("passport counry: {}", args.country);
 
     if args.execute {
         // Execute the program
-        let (output, report) = client.execute(FIBONACCI_ELF, stdin).run().unwrap();
+        let (mut output, report) = client.execute(FIBONACCI_ELF, stdin).run().unwrap();
         println!("Program executed successfully.");
 
         // Read the output.
-        let decoded = PublicValuesStruct::abi_decode(output.as_slice(), true).unwrap();
-        let PublicValuesStruct { n, a, b } = decoded;
-        println!("n: {}", n);
-        println!("a: {}", a);
-        println!("b: {}", b);
+        let passport_number = output.read::<String>();
+        let passport_country = output.read::<String>();
+        let passport = Passport {
+            number: passport_number,
+            country: passport_country,
+        };
+        let is_real_passport = output.read::<bool>();
 
-        let (expected_a, expected_b) = fibonacci_lib::fibonacci(n);
-        assert_eq!(a, expected_a);
-        assert_eq!(b, expected_b);
+        let expected_is_real_passport = fibonacci_lib::check_passport(&passport);
+        assert_eq!(is_real_passport, expected_is_real_passport);
         println!("Values are correct!");
 
         // Record the number of cycles executed.

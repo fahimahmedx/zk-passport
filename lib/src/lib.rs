@@ -1,22 +1,22 @@
-use alloy_sol_types::sol;
-
-sol! {
-    /// The public values encoded as a struct that can be easily deserialized inside Solidity.
-    struct PublicValuesStruct {
-        uint32 n;
-        uint32 a;
-        uint32 b;
-    }
+#[derive(PartialEq, serde::Serialize)]
+pub struct Passport {
+    pub number: String,
+    pub country: String,
 }
 
-/// Compute the n'th fibonacci number (wrapping around on overflows), using normal Rust code.
-pub fn fibonacci(n: u32) -> (u32, u32) {
-    let mut a = 0u32;
-    let mut b = 1u32;
-    for _ in 0..n {
-        let c = a.wrapping_add(b);
-        a = b;
-        b = c;
-    }
-    (a, b)
+/// Check if a passport is valid.
+pub fn check_passport(passport: &Passport) -> bool {
+    let passport_can = Passport {
+        number: "F2014".to_string(),
+        country: "Canada".to_string(),
+    };
+
+    let passport_us = Passport {
+        number: "D9993".to_string(),
+        country: "United States".to_string(),
+    };
+
+    let passports = vec![passport_can, passport_us];
+
+    passports.contains(passport)
 }
